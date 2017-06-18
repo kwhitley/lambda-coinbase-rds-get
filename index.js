@@ -58,7 +58,7 @@ exports.handler = (event, context, callback) => {
   
       var lambda_params = {
         FunctionName: rds_query_function,
-        ClientContext: '',
+//        ClientContext: '',
         InvocationType: 'RequestResponse',
         LogType: 'Tail',
         Payload: JSON.stringify({"query":select_stmt})
