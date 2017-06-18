@@ -87,7 +87,11 @@ exports.handler = (event, context, callback) => {
             });
             payload.forEach(function(record,index){
               column_names.forEach(function(col,idx){
-                highcharts_results[col][index] = payload[index][col];
+                if (idx == 0) {
+                  highcharts_results[col][index] = new Date(payload[index][col]);
+                } else {
+                  highcharts_results[col][index] = payload[index][col];
+                }
               });
             });
             if (isApiProxy) {
