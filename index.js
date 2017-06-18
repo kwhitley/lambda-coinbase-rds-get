@@ -72,17 +72,18 @@ exports.handler = (event, context, callback) => {
               request_response.body = data.Payload;
               callback(null,request_response);
             } else {
-              callback(null,data.Payload);
+              callback(null,JSON.parse(data.Payload));
             }
           } else if (output_format === 'highcharts') {
+            var payload = JSON.parse(data.Payload);
             var highcharts_results = {};
-            var column_names = array_keys(data.Payload[0]);
+            var column_names = array_keys(payload[0]);
             column_names.forEach(function(col,idx){
               highcharts_results[col] = [];
             });
-            data.Payload.forEach(function(record,index){
+            payload.forEach(function(record,index){
               column_names.forEach(function(col,idx){
-                highcharts_results[col][index] = data.Payload[index][col];
+                highcharts_results[col][index] = payload[index][col];
               });
             });
             if (isApiProxy) {
