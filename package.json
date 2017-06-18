@@ -1,0 +1,27 @@
+{
+  "name": "@ramouton/lambda-coinbase-rds-get",
+  "description": "AWS Lambda Function Get Coinbase & GDAX data from RDS Database",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "Raymond A. Mouton <raymond_mouton@icloud.com>",
+  "contributors": [
+    "Raymond A. Mouton <raymond_mouton@icloud.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ramouton/lambda-coinbase-rds-get.git"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/ramouton/lambda-coinbase-rds-get/issues"
+  },
+  "homepage": "https://github.com/ramouton/lambda-coinbase-rds-get#readme",
+  "license": "NONE",
+  "keywords": [],
+  "dependencies": {
+    "aws-sdk": "^2.72.0",
+    "locutus": "^2.0.8"
+  }
+}
