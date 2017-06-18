@@ -58,9 +58,8 @@ exports.handler = (event, context, callback) => {
   
       var lambda_params = {
         FunctionName: rds_query_function,
-//        ClientContext: '',
         InvocationType: 'RequestResponse',
-        LogType: 'Tail',
+        LogType: 'None',
         Payload: JSON.stringify({"query":select_stmt})
       };
       lambda.invoke(lambda_params, function(err, data) {
@@ -70,20 +69,20 @@ exports.handler = (event, context, callback) => {
         } else {
           if (output_format === 'default') {
             if (isApiProxy) {
-              request_response.body = data;
+              request_response.body = data.Payload;
               callback(null,request_response);
             } else {
-              callback(null,data);
+              callback(null,data.Payload);
             }
           } else if (output_format === 'highcharts') {
             var highcharts_results = {};
-            var column_names = array_keys(data[0]);
+            var column_names = array_keys(data.Payload[0]);
             column_names.forEach(function(col,idx){
               highcharts_results[col] = [];
             });
-            data.forEach(function(record,index){
+            data.Payload.forEach(function(record,index){
               column_names.forEach(function(col,idx){
-                highcharts_results[col][index] = data[index][col];
+                highcharts_results[col][index] = data.Payload[index][col];
               });
             });
             if (isApiProxy) {
