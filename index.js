@@ -18,6 +18,10 @@ exports.handler = (event, context, callback) => {
     body: null
   };
 
+  if (event.keepalive) {
+    callback(null,{"alive":true});
+  }
+
   var lambda = new AWS.Lambda();
 
   if ((event.queryStringParameters !== null) && (event.queryStringParameters !== undefined)) {
