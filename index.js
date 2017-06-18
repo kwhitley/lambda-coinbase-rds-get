@@ -88,8 +88,7 @@ exports.handler = (event, context, callback) => {
             payload.forEach(function(record,index){
               column_names.forEach(function(col,idx){
                 if (idx == 0) {
-                  var col_date = new Date(payload[index][col]);
-                  highcharts_results[col][index] = (col_date.getTime()/1000);
+                  highcharts_results[col][index] = Date.parse(payload[index][col]);
                 } else {
                   highcharts_results[col][index] = payload[index][col];
                 }
