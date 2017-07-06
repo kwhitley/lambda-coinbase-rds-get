@@ -9,7 +9,7 @@ exports.handler = (event, context, callback) => {
   var types = ['candles','prices'];
   var output_formats = ['default','highcharts'];
 
-  var input = {}; 
+  var input = {};
   var isApiProxy = false;
 
   var request_response = {
@@ -24,6 +24,83 @@ exports.handler = (event, context, callback) => {
 
   var lambda = new AWS.Lambda();
 
+  // attributor(function)(attributeName): applies function to all values of attributes named attributeName
+  const attributor = (method) => (attr) => (values) => method(pluck(values, attr))
+
+  // pluck(item, indexName): plucks all items from index (attribute name or numeric array index)
+  const pluck = (items, indexName) => {
+    let results = []
+
+    for (var item of items) {
+      results.push(item[indexName])
+    }
+
+    return results
+  }
+
+  // min(array) --> returns min value in array
+  const min = (values) => Math.min.apply(Math, values)
+
+  // max(array) --> returns max value in array
+  const max = (values) => Math.min.apply(Math, values)
+
+  // first(array) --> returns first value in array
+  const first = (values) => values[0]
+
+  // last(array) --> returns last value in array
+  const last = (values) => values[values.length-1]
+
+  // random(min, max) --> returns random value between min and max (inclusive)
+  const random = (min, max) => Math.floor(Math.random() * max) + min
+
+  // sum(values) --> returns the sum of values [array]
+  const sum = (values) => {
+    let sum = 0
+
+    for (var v of values) {
+      sum += v
+    }
+
+    return sum
+  }
+
+  const batchSeries = (numPerBatch) => ([...series]) => {
+    let batchedSeries = []
+
+    while (series.length > numPerBatch) {
+      let batch = series.splice(-numPerBatch)
+
+      batchedSeries.push(batch)
+    }
+
+    return batchedSeries
+  }
+
+  const batchData = (data, minutes) => {
+    // just in case minutes comes across in '5m' format
+    minutes = parseInt(minutes)
+
+    const whichDate = attributor(first)('date')
+    const whichOpen = attributor(first)('open')
+    const whichClose = attributor(last)('close')
+    const whichHigh = attributor(max)('high')
+    const whichLow = attributor(min)('low')
+    const whichVolume = attributor(sum)('volume')
+
+    const processBatch = (batch) => ({
+      date: whichDate(batch),
+      open: whichOpen(batch),
+      close: whichClose(batch),
+      high: whichHigh(batch),
+      low: whichLow(batch),
+      volume: round(whichVolume(batch),2)
+    })
+
+    let batchedData = batchSeries(minutes)(data)
+
+    return batchedData.map(processBatch)
+  }
+
   if ((event.queryStringParameters !== null) && (event.queryStringParameters !== undefined)) {
     input = event.queryStringParameters;
     isApiProxy = true;
@@ -31,14 +108,14 @@ exports.handler = (event, context, callback) => {
     input = event;
     isApiProxy = false;
   }
-  
+
   var output_format = 'default';
   if (typeof input.output_format != 'undefined') {
     if (in_array(input.output_format,output_formats)) {
       output_format = input.output_format;
     }
   }
-  
+
   if ((typeof input.currency != 'undefined') && (typeof input.type != 'undefined')) {
     if (in_array(input.currency,currencies) && in_array(input.type,types)) {
       var table_name = input.currency + '-' + input.type;
@@ -59,7 +136,7 @@ exports.handler = (event, context, callback) => {
         select_stmt += '`' + time_col_prefix + '_at` <= STR_TO_DATE("' + until_date.toISOString() + '","%Y-%m-%dT%T.%fZ")';
       }
       select_stmt += ' ORDER BY `' + time_col_prefix + '_at` ASC';
-  
+
       var lambda_params = {
         FunctionName: rds_query_function,
         InvocationType: 'RequestResponse',
@@ -72,11 +149,19 @@ exports.handler = (event, context, callback) => {
           callback('Lambda Invocation Error',null);
         } else {
           if (output_format === 'default') {
+            let data = isApiProxy ? data.Payload : JSON.parse(data.Payload)
+
+            if (input.interval) {
+              data = batchData(data, input.interval)
+            }
+
             if (isApiProxy) {
               request_response.body = data.Payload;
-              callback(null,request_response);
+              callback(null,Object.assign(request_response, {
+                body: data
+              });
             } else {
-              callback(null,JSON.parse(data.Payload));
+              callback(null, data);
             }
           } else if (output_format === 'highcharts') {
             var payload = JSON.parse(data.Payload);
